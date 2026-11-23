@@ -2,7 +2,7 @@
 
 **Project:** ReviewLens - Customer Feedback Analyzer
 **Programme:** Social Eagle - Final Assignments
-**Document date:** 20 November 2026
+**Document date:** 23 November 2026
 **Purpose of this document:** to let anyone who has not seen the project understand **what** was built, **why**, **who** it is for, **where** everything lives, **when** the work happened and **how** it was made.
 
 ---
@@ -116,8 +116,9 @@ becomes: *negative / delivery / high urgency / English / "Order arrived 70 minut
 | 16 Nov 2026 | Provider changed from Anthropic Claude to **OpenAI** (the only API key available) with a one-setting option to use Claude |
 | 16 Nov 2026 | Layman-level comments added to every program; Program Guide and this Artefacts document written |
 | 20 Nov 2026 | Live run against OpenAI; all three stretch goals built; language-label fix added (see below) |
+| 23 Nov 2026 | Second sample (week 41) added; manual checks done; real e-mail sent; Monday 09:00 Windows scheduled task created and test-run |
 
-**Status at the time of writing (20 Nov 2026)**
+**Status at the time of writing (23 Nov 2026)**
 
 | Check | Result |
 |---|---|
@@ -126,8 +127,8 @@ becomes: *negative / delivery / high urgency / English / "Order arrived 70 minut
 | Live run, OpenAI (`gpt-4o-mini` + `gpt-4o`), two 240-row files (236 valid rows each) | Completed in ~100 s each; **0 reviews ended as "needs review"** |
 | Tamil / Tanglish | Tamil summaries read correctly in English; replies come back in Tamil script (Tamil) or Latin letters (Tanglish) |
 | HIGH-urgency tagging | Food poisoning, wrong order, payment-taken-but-failed and 1h+ late deliveries were tagged HIGH |
-| Monday e-mail | Message building and the SMTP send logic are unit-tested (mocked server). **A real send through a mail account has not been done** - it needs the author's SMTP details |
-| HIGH filter in the browser, Excel opening the CSV | CSV bytes verified to start with the BOM; clicking the filter / opening in Excel still to be eyeballed by the author |
+| Monday e-mail | Unit-tested, and a **real send through Gmail SMTP succeeded** (e-mail received with the CSV attached). The Windows scheduled task "ReviewLens Weekly Report" (Mondays 09:00, runs missed starts) was created and a manual run returned result 0 |
+| HIGH filter, Excel CSV, trend arrows, prompt-injection review | All verified manually by the author: filter shows only HIGH rows, Tamil displays correctly in Excel, week-41 upload shows trend arrows against week 40, and the injection review was not marked positive |
 
 **Defect found by the live run and fixed:** the AI sometimes labelled Tanglish (Latin-letter) reviews as "Tamil", so they
 received Tamil-script replies. The program now detects the writing system itself, passes it to the AI as a hint, and
