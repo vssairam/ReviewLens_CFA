@@ -1,5 +1,8 @@
 # ReviewLens - Customer Feedback Analyzer
 
+> **Solution guide with diagrams:** [`ARTEFACTS.html`](ARTEFACTS.html). When GitHub Pages is on, it is published at
+> https://vssairam.github.io/ReviewLens_CFA/
+
 Upload a week of reviews (English / Tamil / Tanglish) and get tagged reviews, a dashboard,
 a weekly report with week-over-week trend arrows, and an Excel-ready CSV. The report can also be e-mailed
 automatically every Monday.

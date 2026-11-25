@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewLens Solution Guide</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --fg: #1d2330; --muted: #5d6677; --line: #b9c0cc; --panel: #ffffff;
+    --accent: #0b6e4f; --accent-bg: #e3f3ec; --warn: #a4501c; --warn-bg: #fbeee3; --code-bg: #eef0f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171d; --fg: #e8eaf0; --muted: #9aa3b5; --line: #4a5365; --panel: #1c212b;
+      --accent: #5fd1a4; --accent-bg: #173328; --warn: #f0a46d; --warn-bg: #3a2a1d; --code-bg: #232937;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171d; --fg: #e8eaf0; --muted: #9aa3b5; --line: #4a5365; --panel: #1c212b;
+    --accent: #5fd1a4; --accent-bg: #173328; --warn: #f0a46d; --warn-bg: #3a2a1d; --code-bg: #232937;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 16px 80px; }
+  header.hero { padding: 24px 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 1.45rem; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--line); line-height: 1.3; }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  .lead { font-size: 1.1rem; color: var(--muted); max-width: 70ch; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .9em; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin: 18px 0 8px; }
+  nav.toc ol { margin: 6px 0 0; padding-left: 22px; columns: 2; column-gap: 28px; }
+  nav.toc li { margin: 2px 0; break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: .94rem; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); }
+  .tablewrap { overflow-x: auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 16px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .card b { display: block; font-size: 1.25rem; color: var(--accent); }
+  .step { display: grid; grid-template-columns: 38px 1fr; gap: 12px; margin: 22px 0; }
+  .num { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 700;
+         display: flex; align-items: center; justify-content: center; }
+  .step h3 { margin-top: 4px; }
+  .note { background: var(--accent-bg); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 6px; margin: 14px 0; }
+  .caution { background: var(--warn-bg); border-left: 4px solid var(--warn); padding: 10px 14px; border-radius: 6px; margin: 14px 0; }
+  .tag { display: inline-block; font-size: .78rem; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .tag.opt { border-style: dashed; }
+  figure { margin: 18px 0 26px; }
+  figure .scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  figure svg { display: block; width: 100%; min-width: 640px; height: auto; max-width: 100%; color: var(--fg); }
+  figcaption { color: var(--muted); font-size: .92rem; margin-top: 8px; max-width: 80ch; }
+  /* diagram vocabulary (classes live here, not inside the SVG) */
+  svg .b  { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+  svg .a  { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 1.8; }
+  svg .w  { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.8; }
+  svg .d  { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 6 4; }
+  svg .l  { stroke: currentColor; stroke-width: 1.5; fill: none; }
+  svg .ld { stroke: currentColor; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+  svg .la { stroke: var(--accent); stroke-width: 2; fill: none; }
+  svg .lw { stroke: var(--warn); stroke-width: 2; fill: none; }
+  svg text { fill: currentColor; font-size: 12.5px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  svg .t  { text-anchor: middle; }
+  svg .tl { text-anchor: start; }
+  svg .tr { text-anchor: end; }
+  svg .s  { font-size: 11px; fill: var(--muted); }
+  svg .h  { font-weight: 700; }
+  svg .ta { fill: var(--accent); font-weight: 700; }
+  svg .tw { fill: var(--warn); font-weight: 700; }
+  footer { margin-top: 56px; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); padding-top: 14px; }
+  @media (max-width: 640px) { nav.toc ol { columns: 1; } h1 { font-size: 1.6rem; } .step { grid-template-columns: 30px 1fr; } }
+  @media print { figure .scroll { overflow: visible; } figure svg { min-width: 0; } .toc { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>ReviewLens: Customer Feedback Analyzer</h1>
+  <p class="lead">A complete walk-through of the solution: what was asked, how a week of English, Tamil and Tanglish reviews becomes tagged
+  insights and a one-page report, why the numbers can be trusted, and what the tests and live runs showed.</p>
+  <div class="cards">
+    <div class="card"><b>6 tags per review</b>Sentiment, category, urgency, language, a one-line English summary and a ready-to-post reply.</div>
+    <div class="card"><b>Numbers by pandas</b>Every count and percentage is calculated in code, never by the AI.</div>
+    <div class="card"><b>3 stretch goals</b>Week-over-week trend arrows, replies in the customer's own language, Monday e-mail.</div>
+    <div class="card"><b>12 tests pass</b>Run with a fake AI, so no key and no cost.</div>
+  </div>
+  <nav class="toc" aria-label="Contents">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#brief">The assignment</a></li>
+      <li><a href="#overview">Solution at a glance</a></li>
+      <li><a href="#data">What goes in, what comes out</a></li>
+      <li><a href="#steps">A run, step by step</a></li>
+      <li><a href="#retries">Classifying with retries</a></li>
+      <li><a href="#mapreduce">Map, then reduce</a></li>
+      <li><a href="#language">Tamil and Tanglish</a></li>
+      <li><a href="#extras">Stretch goals</a></li>
+      <li><a href="#app">The Streamlit app</a></li>
+      <li><a href="#config">Configuration</a></li>
+      <li><a href="#files">Files</a></li>
+      <li><a href="#results">Tests, results and limits</a></li>
+      <li><a href="#checklist">Done checklist</a></li>
+      <li><a href="#run">How to run it</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ============================================================ 1 -->
+<section id="brief">
+  <h2>1. The assignment</h2>
+  <p>A restaurant chain or online store gets 200 to 500 reviews a week from Google, Zomato, Swiggy and Amazon, in English, Tamil and Tanglish
+  (Tamil typed in English letters). A manager reads them by hand, so urgent complaints are missed for days and nobody can say, with numbers,
+  what customers complain about most. The brief asks for a tool that turns the week's reviews into tagged, prioritised insights and a report a manager can act on in five minutes.</p>
+  <ul>
+    <li><strong>Upload a CSV</strong> with the columns <code>review_id, date, platform, rating, review_text</code>.</li>
+    <li><strong>A LangChain chain per review</strong> returns a fixed structure: sentiment, category, urgency, a one-line summary and a polite suggested reply.</li>
+    <li><strong>Mixed language:</strong> Tamil and Tanglish reviews are understood and summarised in English.</li>
+    <li><strong>A second chain</strong> reads all results and writes top complaints, top praises and 3 action items.</li>
+    <li><strong>A dashboard</strong> with the sentiment split, a category chart and a filter for HIGH-urgency reviews.</li>
+    <li><strong>Export</strong> the enriched table as a CSV that opens correctly in Excel.</li>
+    <li><strong>Retry:</strong> if the model returns an invalid value, retry that review automatically before marking it <em>needs review</em>.</li>
+  </ul>
+
+  <h3>Design decisions and the reason for each</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Decision</th><th>Reason</th></tr>
+    <tr><td>All counts and percentages are calculated in <strong>pandas</strong>, never by the AI</td><td>Language models are unreliable at arithmetic. This guarantees the report always matches the table.</td></tr>
+    <tr><td>AI answers are forced into a <strong>typed form</strong> (Pydantic); invalid ones are retried, then marked <em>needs review</em></td><td>Every review gets all six fields with allowed values, and failures are visible instead of silently wrong.</td></tr>
+    <tr><td><strong>Two models</strong>: a fast cheap one per review, a stronger one for the single weekly report</td><td>Cost and speed where volume is high, quality where it matters most.</td></tr>
+    <tr><td>The AI provider is chosen in <strong>one function</strong> (<code>get_llm()</code>)</td><td>The company can change vendor without touching the rest of the program.</td></tr>
+    <tr><td>The API key comes from a <strong><code>.env</code></strong> file that is git-ignored</td><td>The secret never appears in the source code or the repository.</td></tr>
+    <tr><td>CSV saved as <strong>UTF-8 with BOM</strong></td><td>Excel then shows Tamil text correctly.</td></tr>
+    <tr><td>Review text is treated as <strong>data, not instructions</strong></td><td>A review reading "ignore your rules" must not change the AI's behaviour.</td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="overview">
+  <h2>2. Solution at a glance</h2>
+  <p>There are two ways in: the Streamlit page a person clicks through, and an unattended script that e-mails the report every Monday. Both call the
+  same function, <code>run_analysis()</code> in <code>reviewlens/weekly.py</code>, so they always behave the same.</p>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 800 380" role="img" aria-label="Two entry points, the Streamlit page and the Monday script, both call run_analysis, which talks to the LLM provider, reads and writes the history folder and produces the dashboard, report, CSV and e-mail.">
+      <defs><marker id="rA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+
+      <rect class="a" x="10" y="40" width="160" height="80" rx="8"/>
+      <text class="t h" x="90" y="68">app.py</text><text class="t" x="90" y="86">Streamlit page</text><text class="t s" x="90" y="104">upload · dashboard · downloads</text>
+      <rect class="b" x="10" y="250" width="160" height="80" rx="8"/>
+      <text class="t h" x="90" y="278">send_weekly_report.py</text><text class="t" x="90" y="296">Monday robot</text><text class="t s" x="90" y="314">inbox/ CSV → e-mail</text>
+
+      <rect class="b" x="240" y="100" width="200" height="180" rx="10"/>
+      <text class="t h" x="340" y="126">weekly.run_analysis()</text>
+      <text class="tl s" x="256" y="158">1</text><text class="tl" x="272" y="158">classify every review</text>
+      <text class="tl s" x="256" y="184">2</text><text class="tl" x="272" y="184">count with pandas</text>
+      <text class="tl s" x="256" y="210">3</text><text class="tl" x="272" y="210">AI writes the report</text>
+      <text class="tl s" x="256" y="236">4</text><text class="tl" x="272" y="236">compare with last week</text>
+      <text class="tl s" x="256" y="262">5</text><text class="tl" x="272" y="262">save this week's numbers</text>
+
+      <rect class="b" x="610" y="50" width="180" height="70" rx="8"/>
+      <text class="t h" x="700" y="76">LLM provider</text><text class="t s" x="700" y="94">OpenAI or Anthropic</text><text class="t s" x="700" y="108">only get_llm() knows which</text>
+      <rect class="b" x="610" y="160" width="180" height="60" rx="8"/>
+      <text class="t h" x="700" y="186">history/</text><text class="t s" x="700" y="204">week_ending_*.json</text>
+      <rect class="a" x="610" y="260" width="180" height="90" rx="8"/>
+      <text class="t h" x="700" y="286">Results</text><text class="t s" x="700" y="304">dashboard · report .txt</text><text class="t s" x="700" y="320">enriched CSV · e-mail</text>
+
+      <polyline class="l" points="170,80 205,80 205,150 238,150" marker-end="url(#rA)"/><text class="tl s" x="176" y="72">validate, then call</text>
+      <polyline class="l" points="170,290 205,290 205,230 238,230" marker-end="url(#rA)"/>
+      <line class="l" x1="440" y1="125" x2="608" y2="95" marker-end="url(#rA)"/><text class="t s" x="540" y="100">prompts</text>
+      <line class="l" x1="440" y1="190" x2="608" y2="190" marker-start="url(#rA)" marker-end="url(#rA)"/><text class="t s" x="524" y="182">save / load</text>
+      <line class="la" x1="440" y1="255" x2="608" y2="300" marker-end="url(#rA)"/><text class="t s" x="540" y="296">returns</text>
+    </svg>
+    </div>
+    <figcaption>One engine, two front doors. The page and the scheduled script both validate the CSV first and then hand it to <code>run_analysis()</code>.
+    The engine reaches the AI through one connection, keeps each week's numbers in <code>history/</code>, and returns everything the screens and the e-mail need.</figcaption>
+  </figure>
+
+  <h3>Technology used</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Part</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>AI pipelines</td><td>LangChain (<code>ChatPromptTemplate</code>, <code>|</code> chains, <code>with_structured_output</code>)</td><td>Required by the brief; clean, reusable prompt pipelines.</td></tr>
+    <tr><td>Typed answers</td><td>Pydantic</td><td>Forces the model to return valid, typed fields.</td></tr>
+    <tr><td>Models</td><td>OpenAI <code>gpt-4o-mini</code> per review, <code>gpt-4o</code> for the report (Anthropic Claude optional)</td><td>Cheap and fast at volume, stronger for the one report.</td></tr>
+    <tr><td>Tables and counts</td><td>pandas</td><td>Exact arithmetic on the review table.</td></tr>
+    <tr><td>UI and charts</td><td>Streamlit and Plotly</td><td>An upload page, tabs and charts with very little code.</td></tr>
+    <tr><td>Tests</td><td>pytest with a stub chain</td><td>Checks the logic without a key, a network or cost.</td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="data">
+  <h2>3. What goes in, what comes out</h2>
+  <p><strong>Input:</strong> a CSV with the five columns <code>review_id, date, platform, rating, review_text</code>. The sample
+  <code>sample_data/reviews_week40.csv</code> has 240 rows in English, Tamil and Tanglish, including a few deliberately broken rows.</p>
+  <p><strong>Each review gets six new fields</strong>, each limited to an allowed list (a value outside the list is rejected and retried):</p>
+  <div class="tablewrap"><table>
+    <tr><th>Field</th><th>Allowed values</th><th>Meaning</th></tr>
+    <tr><td><code>sentiment</code></td><td>positive · neutral · negative</td><td>The customer's overall mood.</td></tr>
+    <tr><td><code>category</code></td><td>food_quality · delivery · price · staff · packaging · app</td><td>Which department the feedback concerns.</td></tr>
+    <tr><td><code>urgency</code></td><td>low · medium · high</td><td>How fast to reply. High = reply today.</td></tr>
+    <tr><td><code>language</code></td><td>English · Tamil · Tanglish · Other</td><td>Tanglish = Tamil words typed in English letters.</td></tr>
+    <tr><td><code>summary</code></td><td>one sentence, always in English</td><td>Lets a manager scan Tamil reviews quickly.</td></tr>
+    <tr><td><code>suggested_reply</code></td><td>1 to 3 polite sentences</td><td>Ready to post; in the customer's own language by default.</td></tr>
+  </table></div>
+  <p>A review the AI could not tag even after retrying gets the special label <em>needs review</em> in every constrained field, so a human knows to read it.</p>
+
+  <h3>One review, end to end</h3>
+  <div class="tablewrap"><table>
+    <tr><th>In</th><td><code>R-1042, 2026-10-03, Swiggy, 1, "Ordered at 8pm, came at 9:10. Food fully cold. Very bad."</code></td></tr>
+    <tr><th>Out</th><td>negative · delivery · <strong>high</strong> urgency · English<br>
+        "Order arrived 70 minutes late and the food was cold."<br>
+        plus a polite apology inviting the customer to send their order ID.</td></tr>
+  </table></div>
+
+  <h3>The weekly report the manager reads</h3>
+<pre><code>WEEKLY FEEDBACK REPORT  |  29 Sep to 5 Oct 2026
+Total reviews: 248   Positive 61% (151)   Neutral 14% (35)   Negative 25% (62)
+
+TOP COMPLAINTS
+  1. Late delivery ... 34 negative delivery review(s)  (mostly Swiggy, 8pm to 10pm)  ▲ +5 (worse) vs last week
+  ...
+URGENT: 9 review(s) need a reply within 24 hours
+TREND vs previous period ...
+ACTION ITEMS
+  1. ...</code></pre>
+  <p>The layout is from the program's <code>render_report()</code>; the figures here only illustrate the format. The counts always come from pandas.</p>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="steps">
+  <h2>4. A run, step by step</h2>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 200" role="img" aria-label="Six steps: upload, validate, classify, aggregate, report, show and export. Classify and report are AI steps; the others are plain code.">
+      <defs><marker id="rB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+
+      <rect class="b" x="10"  y="30" width="128" height="86" rx="8"/><text class="t s" x="74" y="50">01</text><text class="t h" x="74" y="68">Upload</text><text class="t s" x="74" y="86">the week's CSV</text><text class="t s" x="74" y="104">app.py</text>
+      <rect class="b" x="160" y="30" width="128" height="86" rx="8"/><text class="t s" x="224" y="50">02</text><text class="t h" x="224" y="68">Validate</text><text class="t s" x="224" y="86">columns, blanks, dupes</text><text class="t s" x="224" y="104">pipeline.py</text>
+      <rect class="a" x="310" y="30" width="128" height="86" rx="8"/><text class="t s" x="374" y="50">03</text><text class="t h" x="374" y="68">Classify</text><text class="t s" x="374" y="86">AI tags each review</text><text class="t s" x="374" y="104">chains + pipeline</text>
+      <rect class="b" x="460" y="30" width="128" height="86" rx="8"/><text class="t s" x="524" y="50">04</text><text class="t h" x="524" y="68">Aggregate</text><text class="t s" x="524" y="86">pandas counts</text><text class="t s" x="524" y="104">analytics.py</text>
+      <rect class="a" x="610" y="30" width="128" height="86" rx="8"/><text class="t s" x="674" y="50">05</text><text class="t h" x="674" y="68">Report</text><text class="t s" x="674" y="86">AI writes themes</text><text class="t s" x="674" y="104">chains + analytics</text>
+      <rect class="b" x="760" y="30" width="128" height="86" rx="8"/><text class="t s" x="824" y="50">06</text><text class="t h" x="824" y="68">Show + export</text><text class="t s" x="824" y="86">dashboard, CSV</text><text class="t s" x="824" y="104">app.py</text>
+
+      <line class="l" x1="138" y1="73" x2="158" y2="73" marker-end="url(#rB)"/>
+      <line class="l" x1="288" y1="73" x2="308" y2="73" marker-end="url(#rB)"/>
+      <line class="l" x1="438" y1="73" x2="458" y2="73" marker-end="url(#rB)"/>
+      <line class="l" x1="588" y1="73" x2="608" y2="73" marker-end="url(#rB)"/>
+      <line class="l" x1="738" y1="73" x2="758" y2="73" marker-end="url(#rB)"/>
+
+      <rect class="a" x="10" y="150" width="22" height="14" rx="3"/><text class="tl s" x="40" y="162">green = an AI step</text>
+      <rect class="b" x="190" y="150" width="22" height="14" rx="3"/><text class="tl s" x="220" y="162">white = plain code</text>
+    </svg>
+    </div>
+    <figcaption>The brief's six steps. Only two of them call the AI; everything else is ordinary, testable code.</figcaption>
+  </figure>
+
+  <div class="step"><div class="num">1</div><div>
+    <h3>Upload</h3>
+    <p>The sidebar takes the reviews CSV, an optional <em>previous week's enriched CSV</em> (for trend arrows) and a "parallel requests" slider (1 to 10, default 5).
+    The <em>Analyse reviews</em> button stays disabled until a file is chosen.</p>
+  </div></div>
+
+  <div class="step"><div class="num">2</div><div>
+    <h3>Validate</h3>
+    <p><code>validate_csv()</code> makes the column names forgiving (capitals and stray spaces ignored), stops with a plain message if any of the five required columns is
+    missing, then removes rows with empty text, rows with no <code>review_id</code>, repeated ids (the first is kept) and rows with an unreadable date. It reports how many rows it kept
+    and dropped. The user's original data is never altered (it works on a copy).</p>
+  </div></div>
+
+  <div class="step"><div class="num">3</div><div>
+    <h3>Classify (the "map" step)</h3>
+    <p>For each review the program sends the platform, the rating, the text and a software-detected <em>writing system</em> to the per-review chain
+    (<code>prompt | model | structured output</code>). Reviews go in groups of 25, several at the same time, and every answer is checked.
+    Invalid or failed answers are asked again (see <a href="#retries">section 5</a>).</p>
+  </div></div>
+
+  <div class="step"><div class="num">4</div><div>
+    <h3>Aggregate</h3>
+    <p><code>compute_stats()</code> counts sentiment, category, urgency and platform with pandas. Reviews marked <em>needs review</em> are left out of the sentiment maths so they
+    cannot distort the percentages.</p>
+  </div></div>
+
+  <div class="step"><div class="num">5</div><div>
+    <h3>Report (the "reduce" step)</h3>
+    <p>The report chain receives the exact statistics plus one-line summaries of the negative and positive reviews (most urgent first, at most 300 per group) and returns complaint
+    themes, praise themes and exactly 3 action items. Its answer form <strong>has no number fields</strong>, so it cannot invent counts. See <a href="#mapreduce">section 6</a>.</p>
+  </div></div>
+
+  <div class="step"><div class="num">6</div><div>
+    <h3>Show and export</h3>
+    <p>The page keeps the results in <code>st.session_state</code> and shows three tabs: Dashboard, Weekly report and Reviews table. The enriched CSV is written as UTF-8 with a BOM so
+    Excel opens Tamil text correctly. If the report step fails, the tagged table is still returned.</p>
+  </div></div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="retries">
+  <h2>5. Classifying with retries</h2>
+  <p>A run must survive a bad answer, a network error or a rate limit without losing the other 200+ reviews. <code>analyze_reviews()</code> works in rounds: round 0 is the first
+  attempt, and rounds 1 and 2 re-ask only the reviews that have not yet produced a valid answer.</p>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 960 250" role="img" aria-label="All reviews start pending and are sent in groups of 25. A valid answer is stored. An invalid or failed answer goes back for another round while tries remain; after three rounds it is marked needs review.">
+      <defs><marker id="rC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+
+      <rect class="b" x="10" y="70" width="130" height="56" rx="8"/><text class="t h" x="75" y="94">Pending</text><text class="t s" x="75" y="111">every review</text>
+      <rect class="a" x="190" y="70" width="180" height="56" rx="8"/><text class="t h" x="280" y="92">Send a group of 25</text><text class="t s" x="280" y="110">batch, up to 5 at once</text>
+      <rect class="b" x="420" y="70" width="130" height="56" rx="8"/><text class="t h" x="485" y="94">Valid answer?</text><text class="t s" x="485" y="111">allowed values, no blanks</text>
+      <rect class="a" x="600" y="10" width="190" height="46" rx="8"/><text class="t h" x="695" y="38">Stored in the table</text>
+      <rect class="w" x="600" y="70" width="190" height="56" rx="8"/><text class="t h" x="695" y="94">Invalid or failed</text><text class="t s" x="695" y="111">any tries left?</text>
+      <rect class="w" x="830" y="70" width="120" height="56" rx="8"/><text class="t h" x="890" y="94">needs review</text><text class="t s" x="890" y="111">a human reads it</text>
+
+      <line class="l" x1="140" y1="98" x2="188" y2="98" marker-end="url(#rC)"/>
+      <line class="l" x1="370" y1="98" x2="418" y2="98" marker-end="url(#rC)"/><text class="t s" x="394" y="90">answers</text>
+      <polyline class="la" points="485,70 485,33 598,33" marker-end="url(#rC)"/><text class="tl s" x="494" y="26">yes</text>
+      <line class="lw" x1="550" y1="98" x2="598" y2="98" marker-end="url(#rC)"/><text class="t s" x="574" y="90">no</text>
+      <line class="lw" x1="790" y1="98" x2="828" y2="98" marker-end="url(#rC)"/><text class="t s" x="809" y="90">no</text>
+      <polyline class="lw" points="650,126 650,205 280,205 280,128" marker-end="url(#rC)"/>
+      <text class="t s" x="465" y="198">yes: next round, only the failures go again (up to 2 more rounds)</text>
+    </svg>
+    </div>
+    <figcaption>One failed review never stops the run: a failure is returned as an object, not raised. After the first attempt and two retries (three rounds in all) a review that is still invalid is labelled
+    <em>needs review</em>, and the report states how many there were. The model connection itself also retries network errors and rate limits on its own (3 times, 60-second timeout).</figcaption>
+  </figure>
+
+  <div class="note"><strong>What counts as valid.</strong> The answer must be a proper filled-in form, every constrained field must hold an allowed word, and the summary and the reply must not be blank.</div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="mapreduce">
+  <h2>6. Map, then reduce: where the numbers come from</h2>
+  <p>A week of reviews does not fit into one prompt, and a model must not be trusted to count. So the work is split: <strong>map</strong> (one small call per review) and
+  <strong>reduce</strong> (one call that reads short summaries). Counting is done in pandas between the two.</p>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 340" role="img" aria-label="Each review goes through the per-review chain into a tagged table. Pandas counts the table to get exact numbers. One-line summaries go to the report chain, which returns themes and actions. render_report combines the pandas numbers with the AI's themes.">
+      <defs><marker id="rD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+
+      <rect class="b" x="10" y="40" width="120" height="60" rx="8"/><text class="t h" x="70" y="66">CSV rows</text><text class="t s" x="70" y="84">validated</text>
+      <rect class="a" x="180" y="40" width="170" height="60" rx="8"/><text class="t h" x="265" y="62">MAP: per-review chain</text><text class="t s" x="265" y="80">gpt-4o-mini, one call each</text>
+      <rect class="b" x="400" y="40" width="140" height="60" rx="8"/><text class="t h" x="470" y="66">Tagged table</text><text class="t s" x="470" y="84">6 new columns</text>
+      <rect class="b" x="590" y="40" width="150" height="60" rx="8"/><text class="t h" x="665" y="62">One-line summaries</text><text class="t s" x="665" y="80">urgent first, max 300</text>
+
+      <rect class="b" x="400" y="210" width="140" height="60" rx="8"/><text class="t h" x="470" y="236">pandas counts</text><text class="t s" x="470" y="254">exact numbers</text>
+      <rect class="a" x="590" y="130" width="170" height="60" rx="8"/><text class="t h" x="675" y="152">REDUCE: report chain</text><text class="t s" x="675" y="170">gpt-4o, one call</text>
+      <rect class="b" x="590" y="210" width="170" height="60" rx="8"/><text class="t h" x="675" y="236">render_report()</text><text class="t s" x="675" y="254">assembles the text</text>
+      <rect class="b" x="810" y="210" width="80" height="60" rx="8"/><text class="t h" x="850" y="236">Report</text><text class="t s" x="850" y="254">.txt</text>
+
+      <line class="l" x1="130" y1="70" x2="178" y2="70" marker-end="url(#rD)"/><text class="t s" x="154" y="62">rows</text>
+      <line class="l" x1="350" y1="70" x2="398" y2="70" marker-end="url(#rD)"/><text class="t s" x="374" y="62">6 tags</text>
+      <line class="l" x1="470" y1="100" x2="470" y2="208" marker-end="url(#rD)"/><text class="tl s" x="478" y="160">count</text>
+      <line class="l" x1="540" y1="70" x2="588" y2="70" marker-end="url(#rD)"/>
+      <line class="l" x1="665" y1="100" x2="665" y2="128" marker-end="url(#rD)"/>
+      <polyline class="l" points="540,225 565,225 565,160 588,160" marker-end="url(#rD)"/><text class="tr s" x="560" y="190">stats as text</text>
+      <line class="la" x1="540" y1="245" x2="588" y2="245" marker-end="url(#rD)"/><text class="t s" x="564" y="287">every number</text>
+      <line class="l" x1="675" y1="190" x2="675" y2="208" marker-end="url(#rD)"/><text class="tl s" x="683" y="203">themes + 3 actions</text>
+      <line class="l" x1="760" y1="240" x2="808" y2="240" marker-end="url(#rD)"/>
+
+      <text class="t s" x="450" y="325">The report AI sees the numbers but its answer form has no number fields, so every figure in the report comes from pandas.</text>
+    </svg>
+    </div>
+    <figcaption>Green boxes are AI calls. The AI reads and groups sentences; pandas does all the arithmetic; <code>render_report()</code> prints the AI's theme names next to pandas' counts.</figcaption>
+  </figure>
+
+  <div class="caution"><strong>A deliberate simplification.</strong> The count printed beside a theme is the number of negative (or positive) reviews in that theme's <em>category</em>, not the number of reviews that match
+  the theme's exact wording. This keeps every number exact, but it is coarser than a per-theme count.</div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="language">
+  <h2>7. Tamil and Tanglish</h2>
+  <p>Reviews come in three kinds: English, Tamil script and <strong>Tanglish</strong> (Tamil words typed in English letters, such as <em>"Delivery romba late, food thanda aagi pochu"</em>).
+  The model understands all three and writes the summary in English. A live run exposed one weakness: the model sometimes labelled Tanglish as "Tamil", so those reviews received replies in Tamil script.
+  The fix is to let the program decide the one thing it can know for certain: which <em>letters</em> the review uses.</p>
+
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 250" role="img" aria-label="The program checks for Tamil letters, passes the writing system to the AI as a hint, and after the AI labels the language it overrules a wrong label: Tamil letters mean Tamil, and a Tamil label on Latin letters becomes Tanglish.">
+      <defs><marker id="rE" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+
+      <rect class="b" x="10" y="100" width="110" height="56" rx="8"/><text class="t h" x="65" y="124">Review text</text><text class="t s" x="65" y="141">as uploaded</text>
+      <rect class="b" x="170" y="100" width="160" height="56" rx="8"/><text class="t h" x="250" y="124">Tamil letters?</text><text class="t s" x="250" y="141">Unicode U+0B80 to U+0BFF</text>
+      <rect class="b" x="380" y="30" width="170" height="46" rx="8"/><text class="t h" x="465" y="58">hint: Tamil letters</text>
+      <rect class="b" x="380" y="180" width="170" height="46" rx="8"/><text class="t h" x="465" y="208">hint: Latin letters</text>
+      <rect class="a" x="600" y="100" width="130" height="56" rx="8"/><text class="t h" x="665" y="124">AI call</text><text class="t s" x="665" y="141">hint is in the prompt</text>
+      <rect class="a" x="770" y="100" width="120" height="56" rx="8"/><text class="t h" x="830" y="122">Script rule</text><text class="t s" x="830" y="139">overrules the label</text>
+
+      <line class="l" x1="120" y1="128" x2="168" y2="128" marker-end="url(#rE)"/>
+      <polyline class="l" points="250,100 250,53 378,53" marker-end="url(#rE)"/><text class="tl s" x="258" y="75">yes</text>
+      <polyline class="l" points="250,156 250,203 378,203" marker-end="url(#rE)"/><text class="tl s" x="258" y="188">no</text>
+      <polyline class="l" points="550,53 665,53 665,98" marker-end="url(#rE)"/>
+      <polyline class="l" points="550,203 665,203 665,158" marker-end="url(#rE)"/>
+      <line class="l" x1="730" y1="128" x2="768" y2="128" marker-end="url(#rE)"/>
+
+      <text class="t s" x="450" y="244">Rule: Tamil letters present → Tamil.  AI said Tamil but the text has only Latin letters → Tanglish.</text>
+    </svg>
+    </div>
+    <figcaption>The software's letter check is reliable, so it overrules the AI whenever they disagree. After this fix every Tamil-script review in the live run was labelled Tamil and every Tanglish review got a Latin-letter reply.</figcaption>
+  </figure>
+
+  <p>Replies follow the customer's language by default (English → English, Tamil → Tamil, Tanglish → Tanglish); the summary always stays in English. Setting
+  <code>REVIEWLENS_REPLY_LANGUAGE=english</code> switches that off.</p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="extras">
+  <h2>8. Stretch goals</h2>
+
+  <h3>8.1 Week-over-week trend arrows</h3>
+  <p>After every analysis the week's numbers are saved to <code>history/week_ending_&lt;last date&gt;.json</code>. The next run compares with the most recent saved week that ended <em>before the current week began</em>
+  (a week that overlaps, for example the same file analysed twice, is never used). Alternatively the user uploads last week's enriched CSV in the sidebar. It is pure arithmetic with no AI.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 860 240" role="img" aria-label="This week's statistics are saved to history. The trend is the difference between this week and the previous week, which comes from the history folder or from an uploaded enriched CSV, and is shown as arrows in the report and dashboard.">
+      <defs><marker id="rF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+
+      <rect class="b" x="10"  y="30" width="130" height="56" rx="8"/><text class="t h" x="75" y="54">This week</text><text class="t s" x="75" y="71">analysed</text>
+      <rect class="b" x="170" y="30" width="140" height="56" rx="8"/><text class="t h" x="240" y="54">compute_stats</text><text class="t s" x="240" y="71">pandas numbers</text>
+      <rect class="a" x="350" y="30" width="150" height="56" rx="8"/><text class="t h" x="425" y="54">compute_trend</text><text class="t s" x="425" y="71">this week − last week</text>
+      <rect class="a" x="540" y="30" width="190" height="56" rx="8"/><text class="t h" x="635" y="54">▲ ▼ ► arrows</text><text class="t s" x="635" y="71">report and dashboard</text>
+
+      <rect class="b" x="10"  y="150" width="230" height="56" rx="8"/><text class="t h" x="125" y="174">save_history()</text><text class="t s" x="125" y="191">history/week_ending_&lt;date&gt;.json</text>
+      <rect class="b" x="290" y="150" width="240" height="56" rx="8"/><text class="t h" x="410" y="172">history/ folder</text><text class="t s" x="410" y="189">latest week that ended before this one began</text>
+      <rect class="b" x="570" y="150" width="200" height="56" rx="8"/><text class="t h" x="670" y="172">or an uploaded CSV</text><text class="t s" x="670" y="189">last week's enriched file</text>
+
+      <line class="l" x1="140" y1="58" x2="168" y2="58" marker-end="url(#rF)"/>
+      <line class="l" x1="310" y1="58" x2="348" y2="58" marker-end="url(#rF)"/>
+      <line class="l" x1="500" y1="58" x2="538" y2="58" marker-end="url(#rF)"/>
+      <line class="l" x1="215" y1="86" x2="150" y2="148" marker-end="url(#rF)"/><text class="tl s" x="52" y="122">remember this week</text>
+      <line class="l" x1="410" y1="148" x2="420" y2="88" marker-end="url(#rF)"/><text class="tl s" x="426" y="124">last week's numbers</text>
+      <line class="ld" x1="620" y1="148" x2="480" y2="88" marker-end="url(#rF)"/>
+    </svg>
+    </div>
+    <figcaption>Each arrow is marked <em>better</em> or <em>worse</em> where that is known: more negative reviews is worse, a higher average rating is better. The dashboard hides the arrows while the HIGH-urgency filter narrows the table, because arrows compare whole weeks.</figcaption>
+  </figure>
+
+  <h3>8.2 Replies in the customer's own language</h3>
+  <p>Described in <a href="#language">section 7</a>: the prompt carries a reply-language rule, and a setting can switch it back to English.</p>
+
+  <h3>8.3 The Monday e-mail</h3>
+  <p><code>send_weekly_report.py</code> runs the whole job with no web page: it takes the newest CSV in <code>inbox/</code> (or the one given with <code>--csv</code>), validates it, runs the analysis, builds an
+  e-mail with the report in the body and two attachments (<code>weekly_report.txt</code> and <code>reviews_enriched.csv</code>), then sends it. Windows Task Scheduler starts it every Monday at 09:00.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 215" role="img" aria-label="Task Scheduler starts the script, which picks the newest CSV in inbox, validates and analyses it, builds the e-mail and either saves it to outbox for a dry run or sends it through SMTP.">
+      <defs><marker id="rG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+
+      <rect class="d" x="10"  y="60" width="120" height="64" rx="8"/><text class="t h" x="70" y="86">Task Scheduler</text><text class="t s" x="70" y="104">Mondays 09:00</text>
+      <rect class="b" x="160" y="60" width="120" height="64" rx="8"/><text class="t h" x="220" y="86">Newest CSV</text><text class="t s" x="220" y="104">in inbox/</text>
+      <rect class="a" x="310" y="60" width="130" height="64" rx="8"/><text class="t h" x="375" y="86">Validate +</text><text class="t h" x="375" y="102">run_analysis</text>
+      <rect class="b" x="470" y="60" width="120" height="64" rx="8"/><text class="t h" x="530" y="86">build_email</text><text class="t s" x="530" y="104">report + CSV</text>
+      <rect class="b" x="640" y="14" width="250" height="56" rx="8"/><text class="t h" x="765" y="38">--dry-run</text><text class="t s" x="765" y="55">saved to outbox/, nothing sent</text>
+      <rect class="a" x="640" y="108" width="250" height="56" rx="8"/><text class="t h" x="765" y="132">sent by SMTP</text><text class="t s" x="765" y="149">STARTTLS, or SSL on port 465</text>
+
+      <line class="l" x1="130" y1="92" x2="158" y2="92" marker-end="url(#rG)"/>
+      <line class="l" x1="280" y1="92" x2="308" y2="92" marker-end="url(#rG)"/>
+      <line class="l" x1="440" y1="92" x2="468" y2="92" marker-end="url(#rG)"/>
+      <polyline class="l" points="590,82 615,82 615,42 638,42" marker-end="url(#rG)"/>
+      <polyline class="l" points="590,102 615,102 615,136 638,136" marker-end="url(#rG)"/>
+      <text class="t s" x="450" y="196">Mail settings are checked first, so a missing setting fails before any money is spent on the AI.</text>
+    </svg>
+    </div>
+    <figcaption>The same <code>run_analysis()</code> serves the page and the robot. The script exits with code 1 on a problem (no CSV, missing settings, report step failed), so Task Scheduler can see that it failed.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="app">
+  <h2>9. The Streamlit app</h2>
+  <ul>
+    <li><strong>Sidebar:</strong> upload the reviews CSV, optionally last week's enriched CSV, choose the number of parallel requests, then press <em>Analyse reviews</em>.</li>
+    <li><strong>Friendly errors:</strong> an unreadable file, a missing column or a missing API key stops the run with a plain message, not a crash.</li>
+    <li><strong>Progress bar:</strong> advances as each group of 25 reviews is classified.</li>
+    <li><strong>Dashboard tab:</strong> four numbers (reviews shown, high urgency, negative share, needs review), a sentiment donut chart, a reviews-by-category bar chart and the table with the suggested replies.
+        The toggle <em>Show only HIGH urgency reviews</em> filters the table and the charts.</li>
+    <li><strong>Weekly report tab:</strong> the report text with a <em>Download report (.txt)</em> button.</li>
+    <li><strong>Reviews table tab:</strong> the full tagged table with <em>Download enriched CSV (Excel-ready)</em>.</li>
+    <li><strong>Memory between clicks:</strong> Streamlit re-runs the script on every click, so the results are kept in <code>st.session_state</code>.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="config">
+  <h2>10. Configuration (<code>.env</code>)</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
+    <tr><td><code>REVIEWLENS_PROVIDER</code></td><td><code>openai</code></td><td>Or <code>anthropic</code>; only <code>get_llm()</code> knows the provider.</td></tr>
+    <tr><td><code>OPENAI_API_KEY</code></td><td>required for OpenAI</td><td>Missing key gives a friendly error, not a crash.</td></tr>
+    <tr><td><code>ANTHROPIC_API_KEY</code></td><td>only for Anthropic</td><td></td></tr>
+    <tr><td><code>REVIEWLENS_MODEL</code></td><td><code>gpt-4o-mini</code></td><td>Model for each review.</td></tr>
+    <tr><td><code>REVIEWLENS_REPORT_MODEL</code></td><td><code>gpt-4o</code></td><td>Model for the weekly report.</td></tr>
+    <tr><td><code>REVIEWLENS_MAX_CONCURRENCY</code></td><td>5</td><td>Reviews sent at the same time.</td></tr>
+    <tr><td><code>REVIEWLENS_MAX_RETRIES</code></td><td>2</td><td>Extra rounds for invalid answers.</td></tr>
+    <tr><td><code>REVIEWLENS_REPLY_LANGUAGE</code></td><td><code>same</code></td><td>Or <code>english</code>.</td></tr>
+    <tr><td><code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code>, <code>REPORT_FROM</code>, <code>REPORT_TO</code></td><td>none</td><td>Only for the Monday e-mail.</td></tr>
+  </table></div>
+  <p><code>.env</code> is excluded from git; <code>.env.example</code> is the template.</p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="files">
+  <h2>11. Files</h2>
+  <div class="tablewrap"><table>
+    <tr><th>File</th><th>Role</th></tr>
+    <tr><td><code>app.py</code></td><td>The Streamlit page: upload, progress, dashboard, report, downloads.</td></tr>
+    <tr><td><code>reviewlens/schema.py</code></td><td>The rulebook: allowed values and the typed answer forms.</td></tr>
+    <tr><td><code>reviewlens/chains.py</code></td><td>The prompts, the two LangChain chains, and <code>get_llm()</code>, the only place that picks the AI provider.</td></tr>
+    <tr><td><code>reviewlens/pipeline.py</code></td><td>CSV validation, batched classification with retries, the language fix and the Excel-safe export.</td></tr>
+    <tr><td><code>reviewlens/analytics.py</code></td><td>The pandas counts, trend maths, history files and the report text.</td></tr>
+    <tr><td><code>reviewlens/weekly.py</code></td><td><code>run_analysis()</code> plus the e-mail builder and sender; used by both front doors.</td></tr>
+    <tr><td><code>send_weekly_report.py</code></td><td>The unattended Monday script.</td></tr>
+    <tr><td><code>sample_data/</code></td><td>Sample CSVs for weeks 39, 40 and 41 and the scripts that generate them.</td></tr>
+    <tr><td><code>tests/test_pipeline.py</code></td><td>12 automatic tests that use a fake AI.</td></tr>
+    <tr><td><code>docs/</code></td><td>Program guide, artefacts document and concepts-and-flow PDF.</td></tr>
+    <tr><td><code>history/</code>, <code>inbox/</code>, <code>outbox/</code></td><td>Saved weekly numbers, the CSV the Monday script reads, and dry-run e-mails.</td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="results">
+  <h2>12. Tests, results and limits</h2>
+
+  <h3>Automated tests: 12, all passing</h3>
+  <p>The tests use a stub chain, so they need no API key, no network and cost nothing. They check, among other things:</p>
+  <ul>
+    <li>validation drops empty and duplicate rows, and a missing column gives a clear error;</li>
+    <li>an invalid answer is retried and a review that keeps failing becomes <em>needs review</em>;</li>
+    <li>report numbers come from pandas, and the CSV export carries the BOM;</li>
+    <li>the reply-language rule, trend numbers and arrows, and that history picks only an earlier week;</li>
+    <li>the language label is corrected by script, and the e-mail is built and sent with TLS login (with a clear error when settings are missing).</li>
+  </ul>
+  <p>Running <code>python -m pytest -q</code> while preparing this guide gave <strong>12 passed</strong>.</p>
+
+  <h3>What the live runs showed</h3>
+  <p>These results are recorded in <code>docs/ReviewLens_Artefacts.md</code> (23 November 2026) from live runs against OpenAI; they were not re-run for this page.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Two 240-row files (236 valid rows each), <code>gpt-4o-mini</code> plus <code>gpt-4o</code></td><td>About 100 seconds each, 0 reviews ended as <em>needs review</em>.</td></tr>
+    <tr><td>Tamil and Tanglish</td><td>Summaries read correctly in English; replies in Tamil script for Tamil and in Latin letters for Tanglish.</td></tr>
+    <tr><td>HIGH urgency</td><td>Food poisoning, wrong order, payment taken but failed and deliveries an hour or more late were tagged HIGH.</td></tr>
+    <tr><td>Monday e-mail</td><td>A real send through Gmail SMTP succeeded with the CSV attached. The Windows task "ReviewLens Weekly Report" (Mondays 09:00, run missed starts) was created and a manual run returned 0.</td></tr>
+    <tr><td>HIGH filter, Excel CSV, trend arrows, injection review</td><td>Checked manually by the author: the filter shows only HIGH rows, Tamil displays correctly in Excel, week 41 against week 40 shows arrows, and a review saying "ignore your rules" was not marked positive.</td></tr>
+  </table></div>
+
+  <div class="note"><strong>A defect the live run found, and the fix.</strong> The model sometimes labelled Tanglish reviews as "Tamil", so they received Tamil-script replies. The program now detects the writing system itself,
+  gives it to the AI as a hint and overrules a wrong "Tamil" label (<a href="#language">section 7</a>). One Tanglish praise review still received an English reply, which is a model choice and harmless.</div>
+
+  <h3>Known limits</h3>
+  <ul>
+    <li>The count beside a report theme is the number of negative (or positive) reviews in the theme's <em>category</em>, not the number matching the theme's wording.</li>
+    <li>Even at temperature 0 the AI is not perfectly repeatable: two runs of the same file differed by a few HIGH-urgency tags (for example 17 versus 18).</li>
+    <li>Trend arrows need an earlier week: analyse it first (it is saved in <code>history/</code>) or upload its enriched CSV.</li>
+    <li>A person should skim the first run's Tamil and Tanglish summaries; quality depends on the model and the prompt.</li>
+    <li>Reviews are sent to an external AI provider. Do not upload data you are not allowed to share with that provider.</li>
+    <li>The default model names can be changed in <code>.env</code> if an account uses different models.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="checklist">
+  <h2>13. Done checklist</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Requirement from the brief</th><th>Evidence</th><th>Status</th></tr>
+    <tr><td>Processes a 200+ row CSV without crashing or timing out</td><td>240-row sample; batches of 25, a concurrency cap, timeouts and per-review error isolation</td><td>Verified live: 236 rows, no failures</td></tr>
+    <tr><td>Every review has all 6 fields from the allowed list</td><td>Pydantic <code>Literal</code> types, the validity check, retries and the <em>needs review</em> fallback</td><td>Verified in tests</td></tr>
+    <tr><td>Tamil and Tanglish reviews get a correct English summary</td><td>Prompt rule plus Tamil and Tanglish rows in the sample</td><td>Verified live</td></tr>
+    <tr><td>Report numbers exactly match the table (pandas, not the AI)</td><td><code>compute_stats</code>; a report form with no number fields</td><td>Verified in tests</td></tr>
+    <tr><td>HIGH-urgency filter works; CSV opens correctly in Excel</td><td>Dashboard toggle; UTF-8 with BOM</td><td>Checked manually; export verified in tests</td></tr>
+    <tr><td>API key from <code>.env</code>, never hard-coded</td><td><code>load_dotenv()</code> and <code>os.getenv</code>; <code>.env</code> is git-ignored</td><td>Verified by code review</td></tr>
+    <tr><td>Stretch: trend vs last week</td><td><code>save_history</code>, <code>compute_trend</code>, arrows</td><td>Built and tested</td></tr>
+    <tr><td>Stretch: replies in the reviewer's language</td><td>Reply-language rule in the prompt</td><td>Built; verified live</td></tr>
+    <tr><td>Stretch: Monday e-mail</td><td><code>send_weekly_report.py</code> and Task Scheduler</td><td>Built; real send succeeded</td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="run">
+  <h2>14. How to run it</h2>
+  <pre><code>python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env          # then put your OPENAI_API_KEY in .env
+streamlit run app.py            # upload sample_data\reviews_week40.csv
+python -m pytest -q             # optional: the automatic tests</code></pre>
+  <p>To try the trend arrows, analyse <code>sample_data/reviews_week39.csv</code> first and then <code>reviews_week40.csv</code>.</p>
+  <p>The Monday e-mail can be rehearsed without sending anything:</p>
+  <pre><code>python send_weekly_report.py --dry-run     # saves the e-mail to outbox/
+python send_weekly_report.py               # really sends (fill the SMTP_* and REPORT_TO lines in .env)</code></pre>
+  <div class="note"><strong>To use Claude instead of OpenAI</strong>, set <code>REVIEWLENS_PROVIDER=anthropic</code> and <code>ANTHROPIC_API_KEY</code> in <code>.env</code>. Nothing else changes.</div>
+</section>
+
+<footer>
+  ReviewLens solution guide · every diagram on this page is drawn as inline SVG and uses only the facts described above.
+</footer>
+</div>
+</body>
+</html>
